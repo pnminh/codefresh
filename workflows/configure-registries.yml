@@ -1,14 +1,21 @@
 version: "1.0"
 # Stages can help you organize your steps in stages
 stages:
+  - 'checkout'
   - "set_build_secrets"
   - "add_registry_creds_to_cluster"
 steps:
+  clone:
+    title: Cloning main repository...
+    type: git-clone
+    stage: checkout
+    repo: 'pnminh/codefresh'
+    revision: 'master'
+    git: github
   set_build_secrets:
     stage: set_build_secrets
     image: quay.io/pnminh232/ubi8-extra:1.0.0
     commands:
-      - cat ${{CF_VOLUME_PATH}}/sensitive/.kube/config
       - oc config use-context "acm-client"
       - |
         # set build envs from secrets
@@ -18,14 +25,16 @@ steps:
   add_registry_creds_to_cluster:
     stage: add_registry_creds_to_cluster
     image: quay.io/pnminh232/ubi8-extra:1.0.0  
+    working_directory: ${{clone}}/workflows
     commands:
-      - cat ${{CF_VOLUME_PATH}}/sensitive/.kube/config
       - oc config use-context "acm-client"
       - |
+        ls -al
+        CLUSTER_ENVS="dev stage prod"
         # Loop through each environment
         for CLUSTER_ENV in $CLUSTER_ENVS; do
           echo "Create app namespace if not exists"
-          envsubst < k8s_resources/namespace.yaml | oc apply -f -
+          envsubst < k8s_resources/namespace.yml | oc apply -f -
           echo "Create registry pull/push secret for $CLUSTER_ENV"
           oc create secret docker-registry codefresh-registry-creds \
           --docker-server=quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-${CLUSTER_ENV} \
