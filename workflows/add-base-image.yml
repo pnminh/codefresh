@@ -1,0 +1,20 @@
+version: '1.0'
+stages:
+- checkout
+- build
+steps:
+  clone:
+    title: Cloning main repository...
+    type: git-clone
+    stage: checkout
+    repo: 'pnminh/codefresh'
+    revision: 'master'
+    git: github
+  build_my_app:
+    title: Build dockerfile
+    type: build
+    stage: build
+    image_name: ubi8-extra
+    working_directory: ${{clone}}/images/base
+    tag: '1.0.0'
+    dockerfile: Dockerfile
