@@ -34,6 +34,7 @@ steps:
         # Loop through each environment
         for CLUSTER_ENV in $CLUSTER_ENVS; do
           echo "Create app namespace if not exists"
+          export CLUSTER_ENV
           envsubst < k8s_resources/namespace.yml | oc apply -f -
           echo "Create registry pull/push secret for $CLUSTER_ENV"
           oc create secret docker-registry codefresh-registry-creds \
