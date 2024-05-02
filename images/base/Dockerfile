@@ -1,5 +1,5 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.9-1161
-ARG PKGS="jq git tar"
+ARG PKGS="jq git tar gettext"
 ARG OC_VERSION="4.15.11"
 ARG HELM_VERSION="3.13.2"
 RUN microdnf install -y $PKGS && \
