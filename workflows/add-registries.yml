@@ -1,0 +1,37 @@
+version: "1.0"
+# Stages can help you organize your steps in stages
+stages:
+  - "set_build_secrets"
+  - "add_registries"
+steps:
+  set_build_secrets:
+    stage: set_build_secrets
+    image: quay.io/pnminh232/ubi8-extra:1.0.0
+    commands:
+      - cat ${{CF_VOLUME_PATH}}/sensitive/.kube/config
+      - oc config use-context "acm-client"
+      - |
+        # set build envs from secrets
+        SECRET_NAME="codefresh-ioc"
+        NAMESPACE="codefresh"
+        oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+  add_registries:
+    stage: add_registries
+    image: quay.io/pnminh232/ubi8-extra:1.0.0
+    commands:
+      - |
+        REGISTRY_ENVS="dev stage prod"
+        # Loop through each environment
+        for REGISTRY_ENV in $REGISTRY_ENVS; do
+            echo "Processing environment: $REGISTRY_ENV"
+            # Run the curl command for the current environment
+            curl 'https://g.codefresh.io/api/registries' \
+                -H "content-type: application/json;charset=UTF-8" \
+                -H "Authorization: $BUILD_SECRET_CODEFRESH_API_KEY" \
+                --data-raw "{\"name\":\"registry-$REGISTRY_ENV\",\"domain\":\"quay.io\",
+                \"username\":\"$BUILD_SECRET_REGISTRY_USERNAME\",\"password\":\"$BUILD_SECRET_REGISTRY_PASSWORD\",
+                \"behindFirewall\":false,\"repositoryPrefix\":\"$BUILD_SECRET_REGISTRY_USERNAME/registry-$REGISTRY_ENV\",
+                \"fallbackRegistry\":null,\"provider\":\"other\"}"
+            echo "Finished processing environment: $REGISTRY_ENV"
+            echo ""
+        done
