@@ -29,7 +29,6 @@ steps:
     commands:
       - oc config use-context "acm-client"
       - |
-        ls -al
         CLUSTER_ENVS="dev stage prod"
         # Loop through each environment
         for CLUSTER_ENV in $CLUSTER_ENVS; do
@@ -41,5 +40,6 @@ steps:
           --docker-server=quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-${CLUSTER_ENV} \
           --docker-username=$BUILD_SECRET_REGISTRY_USERNAME \
           --docker-password=$BUILD_SECRET_REGISTRY_PASSWORD \
-          --namespace=app-${CLUSTER_ENV}
+          --namespace=app-${CLUSTER_ENV} \
+          || echo "Secret already exists"
         done
