@@ -1,0 +1,108 @@
+version: '1.0'
+kind: pipeline
+metadata:
+  name: ioc/app-build-deploy
+  description: App build and deploy pipeline
+  project: ioc
+spec:
+  variables:
+    - key: IMAGE_TAG
+      value: 1.0.0
+      encrypted: false
+    - key: IMAGE_NAME
+      value: "ubi8-extra"
+  runtimeEnvironment:
+    name: k8s-runtime
+  steps:
+    clone:
+      title: Cloning main repository...
+      type: git-clone
+      repo: 'pnminh/codefresh'
+      revision: 'master'
+      git: github
+    build:
+      title: Build phase
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "unit tests"
+        - echo "static code scanning"
+        - echo "build using helm chart and s2i image, push to registry-dev"
+    deploy-to-dev:
+      title: Deploy to dev
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "deploy to dev-green stack"
+    integration-test:
+      title: Integration tests
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "deploy to dev-green stack"
+    switch-stack:
+      title: Switch stack from blue to green
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - |
+          echo "if integration test successful:"
+          echo "Mark current blue stack to old-blue"
+          echo "Update label from green stack to blue"
+          echo "add 100% weight to blue stack and 0% to old-blue stack"
+        - |
+          echo "if integration test successful:"
+          delete green stack
+          fails the pipeline
+    promote-image-to-stage:
+      title: Promote image to registry-stage
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "promote image from registry-dev to registry-stage"
+    deploy-to-stage:
+      title: Deploy to stage cluster
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "deploy to stage cluster"
+    integration-test-stage:
+      title: Integration tests
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "deploy to dev-green stack"
+    switch-stack-stage:
+      title: Switch stack from blue to green
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - |
+          echo "if integration test successful:"
+          echo "Mark current blue stack to old-blue"
+          echo "Update label from green stack to blue"
+          echo "add 100% weight to blue stack and 0% to old-blue stack"
+        - |
+          echo "if integration test successful:"
+          delete green stack
+          fails the pipeline
+    promote-image-to-prod:
+      title: Promote image to registry-prod
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "promote image from registry-stage to registry-prod"
+    deploy-to-prod:
+      title: Deploy to prod cluster
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "deploy to prod cluster"
+    validation-test-prod:
+      title: Integration tests
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - echo "deploy to dev-green stack"
+    switch-stack-prod:
+      title: Switch stack from blue to green
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - |
+          echo "if integration test successful:"
+          echo "Mark current blue stack to old-blue"
+          echo "Update label from green stack to blue"
+          echo "add 100% weight to blue stack and 0% to old-blue stack"
+        - |
+          echo "if integration test successful:"
+          delete green stack
+          fails the pipeline
