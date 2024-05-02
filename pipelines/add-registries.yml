@@ -1,36 +1,38 @@
-version: "1.0"
-# Stages can help you organize your steps in stages
-stages:
-  - "set_build_secrets"
-  - "add_registries_to_codefresh"
-steps:
-  set_build_secrets:
-    stage: set_build_secrets
-    image: quay.io/pnminh232/ubi8-extra:1.0.0
-    commands:
-      - oc config use-context "acm-client"
-      - |
-        # set build envs from secrets
-        SECRET_NAME="codefresh-ioc"
-        NAMESPACE="codefresh"
-        oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
-  add_registries_to_codefresh:
-    stage: add_registries_to_codefresh
-    image: quay.io/pnminh232/ubi8-extra:1.0.0
-    commands:
-      - |
-        CLUSTER_ENVS="dev stage prod"
-        # Loop through each environment
-        for CLUSTER_ENV in $CLUSTER_ENVS; do
-            echo "Processing environment: $CLUSTER_ENV"
-            # Run the curl command for the current environment
-            curl 'https://g.codefresh.io/api/registries' \
-                -H "content-type: application/json;charset=UTF-8" \
-                -H "Authorization: $BUILD_SECRET_CODEFRESH_API_KEY" \
-                --data-raw "{\"name\":\"registry-$CLUSTER_ENV\",\"domain\":\"quay.io\",
-                \"username\":\"$BUILD_SECRET_REGISTRY_USERNAME\",\"password\":\"$BUILD_SECRET_REGISTRY_PASSWORD\",
-                \"behindFirewall\":false,\"repositoryPrefix\":\"$BUILD_SECRET_REGISTRY_USERNAME/registry-$CLUSTER_ENV\",
-                \"fallbackRegistry\":null,\"provider\":\"other\"}"
-            echo "Finished processing environment: $CLUSTER_ENV"
-            echo ""
-        done
+version: '1.0'
+kind: pipeline
+metadata:
+  name: ioc/add-registries-to-codefresh
+  description: Configure registries for pipeline integration
+  project: ioc
+spec:
+  runtimeEnvironment:
+    name: k8s-runtime
+  steps:
+    set_build_secrets:
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - oc config use-context "acm-client"
+        - |
+          # set build envs from secrets
+          SECRET_NAME="codefresh-ioc"
+          NAMESPACE="codefresh"
+          oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+    add_registries_to_codefresh:
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - |
+          CLUSTER_ENVS="dev stage prod"
+          # Loop through each environment
+          for CLUSTER_ENV in $CLUSTER_ENVS; do
+              echo "Processing environment: $CLUSTER_ENV"
+              # Run the curl command for the current environment
+              curl 'https://g.codefresh.io/api/registries' \
+                  -H "content-type: application/json;charset=UTF-8" \
+                  -H "Authorization: $BUILD_SECRET_CODEFRESH_API_KEY" \
+                  --data-raw "{\"name\":\"registry-$CLUSTER_ENV\",\"domain\":\"quay.io\",
+                  \"username\":\"$BUILD_SECRET_REGISTRY_USERNAME\",\"password\":\"$BUILD_SECRET_REGISTRY_PASSWORD\",
+                  \"behindFirewall\":false,\"repositoryPrefix\":\"$BUILD_SECRET_REGISTRY_USERNAME/registry-$CLUSTER_ENV\",
+                  \"fallbackRegistry\":null,\"provider\":\"other\"}"
+              echo "Finished processing environment: $CLUSTER_ENV"
+              echo ""
+          done

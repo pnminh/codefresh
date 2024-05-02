@@ -1,0 +1,45 @@
+version: '1.0'
+kind: pipeline
+metadata:
+  name: ioc/add-registry-creds-to-k8s-clusters
+  description: Add registry creds so images can be pulled/pushed within k8s cluster
+  project: ioc
+spec:
+  runtimeEnvironment:
+    name: k8s-runtime
+  steps:
+    clone:
+      title: Cloning main repository...
+      type: git-clone
+      repo: 'pnminh/codefresh'
+      revision: 'master'
+      git: github
+    set_build_secrets:
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - oc config use-context "acm-client"
+        - |
+          # set build envs from secrets
+          SECRET_NAME="codefresh-ioc"
+          NAMESPACE="codefresh"
+          oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+    add_registry_creds_to_cluster:
+      image: quay.io/pnminh232/ubi8-extra:1.0.0  
+      working_directory: ${{clone}}/workflows
+      commands:
+        - oc config use-context "acm-client"
+        - |
+          CLUSTER_ENVS="dev stage prod"
+          # Loop through each environment
+          for CLUSTER_ENV in $CLUSTER_ENVS; do
+            echo "Create app namespace if not exists"
+            export CLUSTER_ENV
+            envsubst < k8s_resources/namespace.yml | oc apply -f -
+            echo "Create registry pull/push secret for $CLUSTER_ENV"
+            oc create secret docker-registry codefresh-registry-creds \
+            --docker-server=quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-${CLUSTER_ENV} \
+            --docker-username=$BUILD_SECRET_REGISTRY_USERNAME \
+            --docker-password=$BUILD_SECRET_REGISTRY_PASSWORD \
+            --namespace=app-${CLUSTER_ENV} \
+            || echo "Secret already exists"
+          done
