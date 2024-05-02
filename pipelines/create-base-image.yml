@@ -1,0 +1,29 @@
+version: '1.0'
+kind: pipeline
+metadata:
+  name: ioc/create-base-image
+  description: create base image for all build steps
+  project: ioc
+spec:
+  variables:
+    - key: IMAGE_TAG
+      value: 1.0.0
+      encrypted: false
+    - key: IMAGE_NAME
+      value: "ubi8-extra"
+  runtimeEnvironment:
+    name: k8s-runtime
+  steps:
+    clone:
+      title: Cloning main repository...
+      type: git-clone
+      repo: 'pnminh/codefresh'
+      revision: 'master'
+      git: github
+    build_my_app:
+      title: Build dockerfile
+      type: build
+      image_name: ${{IMAGE_NAME}}
+      working_directory: ${{clone}}/images/build-base
+      tag: ${{IMAGE_TAG}}
+      dockerfile: Dockerfile
