@@ -1,0 +1,30 @@
+# More examples of Codefresh YAML can be found at
+# https://codefresh.io/docs/docs/yaml-examples/examples/
+
+version: "1.0"
+# Stages can help you organize your steps in stages
+stages:
+  - "retrieve_secrets"
+  - "add_new_cluster"
+steps:
+ retrieve_secrets:
+    stage: retrieve_secrets
+    image: quay.io/codefresh/kubectl:1.29.2
+    commands:
+      - cat ${{CF_VOLUME_PATH}}/sensitive/.kube/config
+      - kubectl config use-context "acm-client"
+      - echo "CODEFRESH_API_KEY=$(kubectl get secret codefresh-cluster-ioc -n codefresh -o jsonpath="{.data.CODEFRESH_API_KEY}" | base64 -d)" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+      - echo "CLUSTER_API_HOST=$(kubectl get secret codefresh-cluster-ioc -n codefresh -o jsonpath="{.data.API_HOST}" | base64 -d)" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+      - echo "CLUSTER_CLIENT_CA=$(kubectl get secret codefresh-cluster-ioc -n codefresh -o jsonpath="{.data.CLIENT_CA}" | base64 -d)" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+      - echo "CLUSTER_SA_TOKEN=$(kubectl get secret codefresh-cluster-ioc -n codefresh -o jsonpath="{.data.SA_TOKEN}" | base64 -d)" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+ add_new_cluster:
+   image: registry.access.redhat.com/ubi8/ubi:8.9-1160 
+   commands:
+       - |
+        curl -s 'https://g.codefresh.io/api/clusters/local/cluster' \
+        -H "content-type: application/json;charset=UTF-8" \
+        -H "Authorization: $CODEFRESH_API_KEY" \
+        --data-raw "{\"type\":\"sat\",\"selector\":\"acm-client-ioc\",
+        \"host\":\"$CLUSTER_API_HOST\",\"clientCa\":\"$CLUSTER_CLIENT_CA\",
+        \"serviceAccountToken\":\"$CLUSTER_SA_TOKEN\",\"provider\":\"local\",
+        \"providerAgent\":\"custom\"}"
