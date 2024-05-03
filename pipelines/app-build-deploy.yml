@@ -41,15 +41,15 @@ spec:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - |
+        - |-
           echo "if integration test successful:"
           echo "Mark current blue stack to old-blue"
           echo "Update label from green stack to blue"
           echo "add 100% weight to blue stack and 0% to old-blue stack"
-        - |
+        - |-
           echo "if integration test successful:"
-          delete green stack
-          fails the pipeline
+          echo "delete green stack"
+          echo "fails the pipeline"
     promote-image-to-stage:
       title: Promote image to registry-stage
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -69,15 +69,15 @@ spec:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - |
+        - |-
           echo "if integration test successful:"
           echo "Mark current blue stack to old-blue"
           echo "Update label from green stack to blue"
           echo "add 100% weight to blue stack and 0% to old-blue stack"
-        - |
+        - |-
           echo "if integration test successful:"
-          delete green stack
-          fails the pipeline
+          echo "delete green stack"
+          echo "fails the pipeline"
     promote-image-to-prod:
       title: Promote image to registry-prod
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -97,12 +97,12 @@ spec:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - |
+        - |-
           echo "if integration test successful:"
           echo "Mark current blue stack to old-blue"
           echo "Update label from green stack to blue"
           echo "add 100% weight to blue stack and 0% to old-blue stack"
-        - |
+        - |-
           echo "if integration test successful:"
-          delete green stack
-          fails the pipeline
+          echo "delete green stack"
+          echo "fails the pipeline"
