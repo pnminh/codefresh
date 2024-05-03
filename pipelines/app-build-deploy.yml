@@ -22,9 +22,10 @@ spec:
       git: github
     build:
       title: Build phase
-      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      image: registry.access.redhat.com/ubi8/nodejs-20:1-38
+      working_directory: apps/todo-ui
       commands:
-        - echo "unit tests"
+        - npm run build
         - echo "static code scanning"
         - echo "build using helm chart and s2i image, push to registry-dev"
     deploy-to-dev:
