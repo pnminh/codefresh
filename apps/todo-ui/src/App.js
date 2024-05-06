@@ -173,6 +173,7 @@ export default function App() {
 										</Card>
 									);
 								}
+								return null;
 							})
 						) : (
 							<Text size={'lg'} mt={'md'} color={'dimmed'}>
