@@ -23,10 +23,14 @@ spec:
     build:
       title: Build phase
       image: registry.access.redhat.com/ubi8/nodejs-20:1-38
-      working_directory: apps/todo-ui
+      working_directory: ${{clone}}/apps/todo-ui
       commands:
-        - npm run build
+        - npm ci
         - echo "static code scanning"
+    package:
+      title: Build phase
+      image: registry.access.redhat.com/ubi8/nodejs-20:1-38
+      working_directory: ${{clone}}/apps/todo-ui/build
         - echo "build using helm chart and s2i image, push to registry-dev"
     deploy-to-dev:
       title: Deploy to dev
