@@ -19,8 +19,8 @@ spec:
         kind: DockerImage
         name: "{{ .Values.source.image.repository }}:{{ .Values.source.image.tag | default .Chart.AppVersion }}"
   source:
-    type: Git
-    git:
-      uri:  "{{ .Values.source.git.url }}"
-    contextDir: .
+  source:
+    binary: {}
+  strategy:
+    type: Binary
   runPolicy: Serial
