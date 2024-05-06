@@ -1,11 +1,13 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: {{ include "build-app.fullname" . }}
+  name: {{ .Release.Name }}
   labels:
     {{- include "build-app.labels" . | nindent 4 }}
 spec:
   output:
+    pushSecret:
+      name: "{{ .Values.target.image.pushSecret }}"
     to:
       kind: DockerImage
       name: "{{ .Values.target.image.repository }}:{{ .Values.target.image.tag | default "latest" }}"
@@ -13,14 +15,11 @@ spec:
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5
   strategy:
-    type: Source
+    type: Binary
     sourceStrategy:
       from:
         kind: DockerImage
         name: "{{ .Values.source.image.repository }}:{{ .Values.source.image.tag | default .Chart.AppVersion }}"
   source:
-  source:
     binary: {}
-  strategy:
-    type: Binary
   runPolicy: Serial

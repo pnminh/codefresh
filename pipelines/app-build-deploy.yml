@@ -22,16 +22,19 @@ spec:
       git: github
     build:
       title: Build phase
-      image: registry.access.redhat.com/ubi8/nodejs-20:1-38
+      image: registry.access.redhat.com/ubi8/nodejs-16:1-161
       working_directory: ${{clone}}/apps/todo-ui
       commands:
         - npm ci
         - echo "static code scanning"
+        - npm run build
     package:
-      title: Build phase
-      image: registry.access.redhat.com/ubi8/nodejs-20:1-38
-      working_directory: ${{clone}}/apps/todo-ui/build
-        - echo "build using helm chart and s2i image, push to registry-dev"
+      title: Package app image
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      command: 
+        - oc config use-context "acm-client"
+        - helm upgrade --install todo-ui-build helm-charts/build-app -n app-dev --wait
+        - oc start-build todo-ui-build --from-dir ./apps/todo-ui/build  -n app-dev --wait
     deploy-to-dev:
       title: Deploy to dev
       image: quay.io/pnminh232/ubi8-extra:1.0.0
