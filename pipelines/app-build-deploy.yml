@@ -30,16 +30,18 @@ spec:
         - npm run build
     package:
       title: Package app image
-      image: quay.io/pnminh232/ubi8-extra:1.0.0
-      command: 
+      image: 'quay.io/pnminh232/ubi8-extra:1.0.0'
+      working_directory: '${{clone}}'
+      commands:
         - oc config use-context "acm-client"
         - helm upgrade --install todo-ui-build helm-charts/build-app -n app-dev --wait
-        - oc start-build todo-ui-build --from-dir ./apps/todo-ui/build  -n app-dev --wait
+        - oc start-build todo-ui-build --from-dir apps/todo-ui/build -n app-dev --wait
     deploy-to-dev:
       title: Deploy to dev
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - echo "deploy to dev-green stack"
+        - oc config use-context "acm-client"
+        - helm upgrade --install todo-ui helm-charts/deploy-app -n app-dev --wait
     integration-test:
       title: Integration tests
       image: quay.io/pnminh232/ubi8-extra:1.0.0
