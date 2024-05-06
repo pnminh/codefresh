@@ -25,10 +25,21 @@ spec:
           oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
     add_registry_creds_to_cluster:
       image: quay.io/pnminh232/ubi8-extra:1.0.0  
-      working_directory: ${{clone}}/workflows
+      working_directory: ${{clone}}/pipelines
       commands:
         - oc config use-context "acm-client"
         - |
+          # build cluster
+          CLUSTER_ENVS="dev stage prod"
+          for CLUSTER_ENV in $CLUSTER_ENVS; do
+            oc create secret docker-registry codefresh-registry-${CLUSTER_ENV} \
+              --docker-server=quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-${CLUSTER_ENV} \
+              --docker-username=$BUILD_SECRET_REGISTRY_USERNAME \
+              --docker-password=$BUILD_SECRET_REGISTRY_PASSWORD \
+              --namespace=codefresh \
+              || echo "Secret already exists"
+          done
+          # deployment cluster
           CLUSTER_ENVS="dev stage prod"
           # Loop through each environment
           for CLUSTER_ENV in $CLUSTER_ENVS; do

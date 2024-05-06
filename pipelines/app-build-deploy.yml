@@ -20,6 +20,15 @@ spec:
       repo: 'pnminh/codefresh'
       revision: 'master'
       git: github
+    set_build_secrets:
+      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      commands:
+        - oc config use-context "acm-client"
+        - |
+          # set build envs from secrets
+          SECRET_NAME="codefresh-ioc"
+          NAMESPACE="codefresh"
+          oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
     build:
       title: Build phase
       image: registry.access.redhat.com/ubi8/nodejs-16:1-161
@@ -39,6 +48,7 @@ spec:
     deploy-to-dev:
       title: Deploy to dev
       image: quay.io/pnminh232/ubi8-extra:1.0.0
+      working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
         - helm upgrade --install todo-ui helm-charts/deploy-app -n app-dev --wait
@@ -62,14 +72,18 @@ spec:
           echo "fails the pipeline"
     promote-image-to-stage:
       title: Promote image to registry-stage
-      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      image: registry.access.redhat.com/ubi9/skopeo:9.4-6
       commands:
-        - echo "promote image from registry-dev to registry-stage"
+        - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-dev
+        - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-stage  
+        - skopeo copy docker://quay.io/pnminh232/registry-dev/todo-ui:1.0.0 docker://quay.io/pnminh232/registry-stage/todo-ui:1.0.0     
     deploy-to-stage:
       title: Deploy to stage cluster
       image: quay.io/pnminh232/ubi8-extra:1.0.0
+      working_directory: '${{clone}}'
       commands:
-        - echo "deploy to stage cluster"
+        - oc config use-context "acm-client"
+        - helm upgrade --install todo-ui helm-charts/deploy-app --set image.repository="quay.io/pnminh232/registry-stage/todo-ui" -n app-stage --wait
     integration-test-stage:
       title: Integration tests
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -90,14 +104,18 @@ spec:
           echo "fails the pipeline"
     promote-image-to-prod:
       title: Promote image to registry-prod
-      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      image: registry.access.redhat.com/ubi9/skopeo:9.4-6
       commands:
-        - echo "promote image from registry-stage to registry-prod"
+        - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-stage
+        - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-prod  
+        - skopeo copy docker://quay.io/pnminh232/registry-stage/todo-ui:1.0.0 docker://quay.io/pnminh232/registry-prod/todo-ui:1.0.0  
     deploy-to-prod:
       title: Deploy to prod cluster
       image: quay.io/pnminh232/ubi8-extra:1.0.0
+      working_directory: '${{clone}}'
       commands:
-        - echo "deploy to prod cluster"
+        - oc config use-context "acm-client"
+        - helm upgrade --install todo-ui helm-charts/deploy-app --set image.repository="quay.io/pnminh232/registry-prod/todo-ui" -n app-prod --wait
     validation-test-prod:
       title: Integration tests
       image: quay.io/pnminh232/ubi8-extra:1.0.0
