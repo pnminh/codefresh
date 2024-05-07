@@ -71,7 +71,7 @@ spec:
       commands:
         - |-
           oc config use-context "acm-client"
-          if ! oc get route todo-ui-bg &> /dev/null; then
+          if ! oc get route todo-ui-bg -n app-dev &> /dev/null; then
             echo "Route does not exist"
             echo "Label bg-stack=blue to $BLUE_STACK_CANDIDATE"
             oc label svc/$BLUE_STACK_CANDIDATE bg-stack=blue  -n app-dev
@@ -84,7 +84,7 @@ spec:
             old_blue_service_name=$(echo $route_info  | jq -r '.spec.to.name')
             oc label svc/$old_blue_service_name  -n app-dev bg-stack=oldBlue
             oc label svc/$BLUE_STACK_CANDIDATE  -n app-dev bg-stack=blue
-            helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE --route.oldBlueStack=$old_blue_service_name -n app-dev --wait
+            helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE --set route.oldBlueStack=$old_blue_service_name -n app-dev --wait
           fi 
         - |-
           echo "if integration test not successful:"
