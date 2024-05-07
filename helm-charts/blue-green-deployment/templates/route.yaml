@@ -10,7 +10,7 @@ spec:
     weight: 100
   alternateBackends:
   - kind: Service
-    name: {{ .Values.route.oldBlueStack | default "" }}
+    name: {{ .Values.route.oldBlueStack | default "null" }}
     weight: 0
   port:
     targetPort: {{ .Values.route.targetPort }}
