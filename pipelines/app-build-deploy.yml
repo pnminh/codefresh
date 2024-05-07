@@ -29,13 +29,19 @@ spec:
           SECRET_NAME="codefresh-ioc"
           NAMESPACE="codefresh"
           oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+    static_code_analysis:
+      title: Sonar scan
+      image: sonarsource/sonar-scanner-cli:5.0.1
+      working_directory: ${{clone}}
+      commands:
+        -  SONAR_TOKEN=$BUILD_SECRET_SONAR_TOKEN sonar-scanner
     build:
       title: Build phase
       image: registry.access.redhat.com/ubi8/nodejs-16:1-161
       working_directory: ${{clone}}/apps/todo-ui
       commands:
         - npm ci
-        - echo "static code scanning"
+        - npm run test
         - npm run build
     package:
       title: Package app image
