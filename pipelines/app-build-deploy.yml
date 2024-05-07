@@ -57,7 +57,7 @@ spec:
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - export BLUE_STACK_CANDIDATE=todo-ui-`date +'%Y-%m-%d-%H-%M-%S'` && echo $BLUE_STACK_CANDIDATE >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+        - export BLUE_STACK_CANDIDATE=todo-ui-`date +'%Y-%m-%d-%H-%M-%S'` && echo "BLUE_STACK_CANDIDATE=$BLUE_STACK_CANDIDATE" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
         - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app -n app-dev --wait
     integration-test:
       title: Integration tests
@@ -74,16 +74,16 @@ spec:
           if ! oc get route todo-ui-bg &> /dev/null; then
             echo "Route does not exist"
             echo "Label bg-stack=blue to $BLUE_STACK_CANDIDATE"
-            oc label svc/$BLUE_STACK_CANDIDATE bg-stack=blue
+            oc label svc/$BLUE_STACK_CANDIDATE bg-stack=blue  -n app-dev
             echo "create bg route with blue stack"
             helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE -n app-dev --wait
           else
             echo "Route exists"
             echo "Label bg-stack=oldBlue to old stack"
-            route_info=$(oc get route abc -o json)
-            old_blue_service_name=$(echo $route_info | jq -r '.spec.to.name')
-            oc label svc/$old_blue_service_name bg-stack=oldBlue
-            oc label svc/$BLUE_STACK_CANDIDATE bg-stack=blue
+            route_info=$(oc get route todo-ui-bg -n app-dev -o json)
+            old_blue_service_name=$(echo $route_info  | jq -r '.spec.to.name')
+            oc label svc/$old_blue_service_name  -n app-dev bg-stack=oldBlue
+            oc label svc/$BLUE_STACK_CANDIDATE  -n app-dev bg-stack=blue
             helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE --route.oldBlueStack=$old_blue_service_name -n app-dev --wait
           fi 
         - |-
