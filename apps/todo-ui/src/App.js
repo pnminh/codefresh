@@ -161,7 +161,7 @@ export default function App() {
 														deleteTask(index);
 													}}
 													color={'red'}
-													variant={'transparent'}>
+													variant={'transparent'} data-testid={`delete-task-${index}`}>
 													<Trash />
 												</ActionIcon>
 											</Group>

@@ -47,6 +47,7 @@
 		"eslint-config-react-app": "^7.0.1",
 		"eslint-plugin-react": "^7.34.1",
 		"gh-pages": "^4.0.0",
-		"globals": "^15.1.0"
+		"globals": "^15.1.0",
+		"jest": "^27.5.1"
 	}
 }

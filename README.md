@@ -11,7 +11,6 @@ oc adm policy add-scc-to-user privileged system:serviceaccount:codefresh:cf-runt
 ## Pipelines
 - Create [Runner](#runner)
 - Create cluster
-- 
 - Create project
 ```
 $ codefresh create project ioc
