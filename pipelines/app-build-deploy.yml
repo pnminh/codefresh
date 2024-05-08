@@ -61,9 +61,10 @@ spec:
         - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app -n app-dev --wait
     integration-test:
       title: Integration tests
-      image: quay.io/pnminh232/ubi8-extra:1.0.0
+      image: cypress/base:20.13.0
+      working_directory: '${{clone}}/apps/todo-ui'
       commands:
-        - echo "deploy to dev-green stack"
+        - CYPRESS_BASE_URL=$BLUE_STACK_CANDIDATE cypress run
     switch-stack:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -81,10 +82,16 @@ spec:
             echo "Route exists"
             echo "Label bg-stack=oldBlue to old stack"
             route_info=$(oc get route todo-ui-bg -n app-dev -o json)
-            old_blue_service_name=$(echo $route_info  | jq -r '.spec.to.name')
-            oc label svc/$old_blue_service_name  -n app-dev bg-stack=oldBlue
+            old_blue_service_name=$(echo $route_info  | jq -r ".spec.to.name")
+            # only keep the latest 
+            release_to_be_deleted=$(echo $route_info  | jq -r ".spec.alternateBackends[0].name")
+            oc label svc/$old_blue_service_name  -n app-dev bg-stack=oldBlue --overwrite
             oc label svc/$BLUE_STACK_CANDIDATE  -n app-dev bg-stack=blue
             helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE --set route.oldBlueStack=$old_blue_service_name -n app-dev --wait
+            if [ -z "$release_to_be_deleted" ]; then
+              echo "Deleting unused release"
+              helm delete release_to_be_deleted
+            fi
           fi 
         - |-
           echo "if integration test not successful:"
