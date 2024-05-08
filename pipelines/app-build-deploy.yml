@@ -66,7 +66,8 @@ spec:
       image: cypress/base:20.13.0
       working_directory: '${{clone}}/apps/todo-ui'
       commands:
-        - CYPRESS_BASE_URL=$BLUE_STACK_CANDIDATE npx cypress run
+        - npx cypress install
+        - CYPRESS_BASE_URL="https://${BLUE_STACK_CANDIDATE}-app-dev.apps.acm-client.gj1x.p1.openshiftapps.com" npx cypress run
     switch-stack:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -90,9 +91,9 @@ spec:
             oc label svc/$old_blue_service_name  -n app-dev bg-stack=oldBlue --overwrite
             oc label svc/$BLUE_STACK_CANDIDATE  -n app-dev bg-stack=blue
             helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE --set route.oldBlueStack=$old_blue_service_name -n app-dev --wait
-            if [-n "$release_to_be_deleted" ]; then
+            if [ -n "$release_to_be_deleted" ] && [ "$release_to_be_deleted" != "nil" ]; then
               echo "Deleting unused release"
-              helm delete release_to_be_deleted
+              helm delete $release_to_be_deleted -n app-dev
             fi
           fi 
         - |-
