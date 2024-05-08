@@ -13,6 +13,8 @@ spec:
       value: "ubi8-extra"
   runtimeEnvironment:
     name: k8s-runtime
+    cpu: 2000m
+    memory: 2000Mi
   steps:
     clone:
       title: Cloning main repository...
@@ -64,7 +66,7 @@ spec:
       image: cypress/base:20.13.0
       working_directory: '${{clone}}/apps/todo-ui'
       commands:
-        - CYPRESS_BASE_URL=$BLUE_STACK_CANDIDATE cypress run
+        - CYPRESS_BASE_URL=$BLUE_STACK_CANDIDATE npx cypress run
     switch-stack:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -88,7 +90,7 @@ spec:
             oc label svc/$old_blue_service_name  -n app-dev bg-stack=oldBlue --overwrite
             oc label svc/$BLUE_STACK_CANDIDATE  -n app-dev bg-stack=blue
             helm upgrade --install todo-ui helm-charts/blue-green-deployment --set route.blueStack=$BLUE_STACK_CANDIDATE --set route.oldBlueStack=$old_blue_service_name -n app-dev --wait
-            if [ -z "$release_to_be_deleted" ]; then
+            if [-n "$release_to_be_deleted" ]; then
               echo "Deleting unused release"
               helm delete release_to_be_deleted
             fi
