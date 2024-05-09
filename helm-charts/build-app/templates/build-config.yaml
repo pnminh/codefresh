@@ -10,7 +10,7 @@ spec:
       name: "{{ .Values.target.image.pushSecret }}"
     to:
       kind: DockerImage
-      name: "{{ .Values.target.image.repository }}:{{ .Values.target.image.tag | default "latest" }}"
+      name: "{{ .Values.target.image.registry }}/{{ .Values.target.image.path }}:{{ .Values.target.image.tag | default "latest" }}"
   resources: {}
   successfulBuildsHistoryLimit: 5
   failedBuildsHistoryLimit: 5

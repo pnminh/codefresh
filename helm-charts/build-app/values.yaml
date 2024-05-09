@@ -8,7 +8,8 @@ source:
 
 target:
   image:
-    repository: quay.io/pnminh232/registry-dev/todo-ui
+    registry: quay.io/pnminh232/registry-dev
+    path: todo-ui
     tag: "1.0.0"
     pushSecret: "codefresh-registry-creds"
 nameOverride: ""

@@ -51,7 +51,9 @@ spec:
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - helm upgrade --install todo-ui-build helm-charts/build-app -n app-dev --wait
+        - export BUILD_DATE=$(date +'%Y-%m-%d-%H-%M-%S')
+        - export BLUE_STACK_CANDIDATE=todo-ui-${BUILD_DATE} && echo "BLUE_STACK_CANDIDATE=$BLUE_STACK_CANDIDATE" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+        - helm upgrade --install todo-ui-build helm-charts/build-app --set target.image.path=todo-ui --set target.image.tag=$BUILD_DATE -n app-dev --wait
         - oc start-build todo-ui-build --from-dir apps/todo-ui/build -n app-dev --wait
     deploy-to-dev:
       title: Deploy to dev
@@ -59,8 +61,8 @@ spec:
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - export BLUE_STACK_CANDIDATE=todo-ui-`date +'%Y-%m-%d-%H-%M-%S'` && echo "BLUE_STACK_CANDIDATE=$BLUE_STACK_CANDIDATE" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
-        - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app -n app-dev --wait
+        - 
+        - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set -n app-dev --wait
     integration-test:
       title: Integration tests
       image: cypress/base:20.13.0
