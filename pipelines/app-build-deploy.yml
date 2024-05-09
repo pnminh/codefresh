@@ -51,18 +51,17 @@ spec:
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - export BUILD_DATE=$(date +'%Y-%m-%d-%H-%M-%S')
-        - export BLUE_STACK_CANDIDATE=todo-ui-${BUILD_DATE} && echo "BLUE_STACK_CANDIDATE=$BLUE_STACK_CANDIDATE" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
-        - helm upgrade --install todo-ui-build helm-charts/build-app --set target.image.path=todo-ui --set target.image.tag=$BUILD_DATE -n app-dev --wait
-        - oc start-build todo-ui-build --from-dir apps/todo-ui/build -n app-dev --wait
+        - export APP_IMAGE_TAG=$(date +'%Y-%m-%d-%H-%M-%S') && echo "APP_IMAGE_TAG=$APP_IMAGE_TAG" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+        - export BLUE_STACK_CANDIDATE=todo-ui-${APP_IMAGE_TAG} && echo "BLUE_STACK_CANDIDATE=$BLUE_STACK_CANDIDATE" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+        - helm upgrade --install todo-ui-build helm-charts/build-app --set "target.image.path=todo-ui" --set "target.image.tag=$APP_IMAGE_TAG" -n app-dev --wait
+        - oc start-build todo-ui-build --from-dir apps/todo-ui/build -n app-dev --follow
     deploy-to-dev:
       title: Deploy to dev
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - 
-        - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set -n app-dev --wait
+        - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set "image.tag=$APP_IMAGE_TAG" --set "image.path=todo-ui" -n app-dev
     integration-test:
       title: Integration tests
       image: cypress/base:20.13.0
@@ -108,14 +107,14 @@ spec:
       commands:
         - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-dev
         - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-stage  
-        - skopeo copy docker://quay.io/pnminh232/registry-dev/todo-ui:1.0.0 docker://quay.io/pnminh232/registry-stage/todo-ui:1.0.0     
+        - skopeo copy docker://quay.io/pnminh232/registry-dev/todo-ui:$APP_IMAGE_TAG docker://quay.io/pnminh232/registry-stage/todo-ui:1.0.0     
     deploy-to-stage:
       title: Deploy to stage cluster
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - helm upgrade --install todo-ui helm-charts/deploy-app --set image.repository="quay.io/pnminh232/registry-stage/todo-ui" -n app-stage --wait
+        - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set "image.tag=1.0.0" --set "image.path=todo-ui" -n app-stage
     integration-test-stage:
       title: Integration tests
       image: quay.io/pnminh232/ubi8-extra:1.0.0
@@ -140,14 +139,14 @@ spec:
       commands:
         - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-stage
         - skopeo login --username $BUILD_SECRET_REGISTRY_USERNAME  --password $BUILD_SECRET_REGISTRY_PASSWORD quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-prod  
-        - skopeo copy docker://quay.io/pnminh232/registry-stage/todo-ui:1.0.0 docker://quay.io/pnminh232/registry-prod/todo-ui:1.0.0  
+        - skopeo copy docker://quay.io/pnminh232/registry-stage/todo-ui:$APP_IMAGE_TAG docker://quay.io/pnminh232/registry-prod/todo-ui:1.0.0  
     deploy-to-prod:
       title: Deploy to prod cluster
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
         - oc config use-context "acm-client"
-        - helm upgrade --install todo-ui helm-charts/deploy-app --set image.repository="quay.io/pnminh232/registry-prod/todo-ui" -n app-prod --wait
+        - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set "image.tag=1.0.0" --set "image.path=todo-ui" -n app-prod
     validation-test-prod:
       title: Integration tests
       image: quay.io/pnminh232/ubi8-extra:1.0.0
