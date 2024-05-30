@@ -18,6 +18,7 @@ $ codefresh create pipeline -f pipelines/create-base-image.yml
 ```
 ## References
 - https://codefresh.io/docs/docs/integrations/codefresh-api/
+- https://codefresh.io/blog/ci-cd-pipelines-microservices/
 ## Troubleshooting
 To debug directly a step in container:
 - use command `sleep infinity`
