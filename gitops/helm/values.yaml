@@ -1,0 +1,29 @@
+global:
+  runtime:
+    name: cf-gitops-runtime
+
+
+internal-router:
+  dnsService: dns-default
+  dnsNamespace: openshift-dns
+  clusterDomain: cluster.local
+
+argo-cd:
+  redis:
+    securityContext:
+      runAsUser: 1001190001 # Arbitrary user ID within allowed range, need to look into namespace resource to get this one
+
+  openshift:
+    enabled: true
+
+argo-events:
+  openshift: true
+
+  webhook:
+    port: 8443
+
+sealed-secrets:
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
