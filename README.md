@@ -25,3 +25,6 @@ $ codefresh create pipeline -f pipelines/create-base-image.yml
 To debug directly a step in container:
 - use command `sleep infinity`
 - On K8s cluster, go to `dind` container, run `docker exec -it <container_id_or_name> /bin/bash` 
+## Todo
+- webhook to trigger pipeline
+- create reusuable helm charts for each app type(java, node, python)
