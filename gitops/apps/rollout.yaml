@@ -14,7 +14,7 @@ spec:
         app: codefresh-guestbook
     spec:
       containers:
-        - image: quay.io/pnminh232/hello-java:review1
+        - image: quay.io/pnminh232/hello-java:review2
           name: codefresh-guestbook
           ports:
             - name: http
