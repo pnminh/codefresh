@@ -17,17 +17,17 @@ spec:
     set_build_secrets:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - |
           # set build envs from secrets
           SECRET_NAME="codefresh-ioc"
-          NAMESPACE="codefresh"
+          NAMESPACE="codefresh-runner"
           oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
     add_registry_creds_to_cluster:
       image: quay.io/pnminh232/ubi8-extra:1.0.0  
       working_directory: ${{clone}}/pipelines
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - |
           # build cluster
           CLUSTER_ENVS="dev stage prod"
@@ -36,7 +36,7 @@ spec:
               --docker-server=quay.io/${BUILD_SECRET_REGISTRY_USERNAME}/registry-${CLUSTER_ENV} \
               --docker-username=$BUILD_SECRET_REGISTRY_USERNAME \
               --docker-password=$BUILD_SECRET_REGISTRY_PASSWORD \
-              --namespace=codefresh \
+              --namespace=codefresh-runner \
               || echo "Secret already exists"
           done
           # deployment cluster

@@ -1,0 +1,60 @@
+# -- Global parameters
+# @default -- See below
+global:
+  # -- User token in plain text (required if `global.codefreshTokenSecretKeyRef` is omitted!)
+  # Ref: https://g.codefresh.io/user/settings (see API Keys)
+  # Minimal API key scopes: Runner-Installation(read+write), Agent(read+write), Agents(read+write)
+  #codefreshToken: "$CF_API_KEY"
+  # -- User token that references an existing secret containing API key (required if `global.codefreshToken` is omitted!)
+  # codefreshTokenSecretKeyRef: 
+  #   name: codefresh-api-token
+  #   key: codefresh-api-token
+  # E.g.
+  # codefreshTokenSecretKeyRef:
+  #   name: my-codefresh-api-token
+  #   key: codefresh-api-token
+
+  # -- Account ID (required!)
+  # Can be obtained here https://g.codefresh.io/2.0/account-settings/account-information
+  #accountId: "$CF_ACCOUNT_ID" #cannot use env variable
+
+  # -- K8s context name (required!)
+  context: "acm-client"
+  # E.g.
+  # context: prod-ue1-runtime-1
+
+  # -- Agent Name (optional!)
+  # If omitted, the following format will be used '{{ .Values.global.context }}_{{ .Release.Namespace }}'
+  agentName: "k8s-agent"
+  # E.g.
+  # agentName: prod-ue1-runtime-1
+
+  # -- Runtime name (optional!)
+  # If omitted, the following format will be used '{{ .Values.global.context }}/{{ .Release.Namespace }}'
+  runtimeName: "k8s-runtime"
+  # E.g.
+  # runtimeName: prod-ue1-runtime-1/namespace
+# openshift
+runner:
+  podSecurityContext:
+    enabled: false
+
+volumeProvisioner:
+  podSecurityContext:
+    enabled: false
+  env:
+    PRIVILEGED_CONTAINER: true
+  dind-lv-monitor:
+    containerSecurityContext:
+      enabled: true
+      privileged: true
+    volumePermissions:
+      enabled: true
+      securityContext:
+        privileged: true
+        runAsUser: auto
+runtime:
+  engine:
+    userEnvVars:
+      - name: npm_config_cache
+        value: /tmp/.npm

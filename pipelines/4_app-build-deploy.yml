@@ -13,8 +13,8 @@ spec:
       value: "ubi8-extra"
   runtimeEnvironment:
     name: k8s-runtime
-    cpu: 2000m
-    memory: 2000Mi
+    # cpu: 1000m
+    # memory: 1000Mi
   steps:
     clone:
       title: Cloning main repository...
@@ -25,11 +25,11 @@ spec:
     set_build_secrets:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - |
           # set build envs from secrets
           SECRET_NAME="codefresh-ioc"
-          NAMESPACE="codefresh"
+          NAMESPACE="codefresh-runner"
           oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
     static_code_analysis:
       title: Sonar scan
@@ -50,7 +50,7 @@ spec:
       image: 'quay.io/pnminh232/ubi8-extra:1.0.0'
       working_directory: '${{clone}}'
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - export APP_IMAGE_TAG=$(date +'%Y-%m-%d-%H-%M-%S') && echo "APP_IMAGE_TAG=$APP_IMAGE_TAG" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
         - export BLUE_STACK_CANDIDATE=todo-ui-${APP_IMAGE_TAG} && echo "BLUE_STACK_CANDIDATE=$BLUE_STACK_CANDIDATE" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
         - helm upgrade --install todo-ui-build helm-charts/build-app --set "target.image.path=todo-ui" --set "target.image.tag=$APP_IMAGE_TAG" -n app-dev --wait
@@ -60,22 +60,23 @@ spec:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set "image.tag=$APP_IMAGE_TAG" --set "image.path=todo-ui" -n app-dev
     integration-test:
       title: Integration tests
       image: cypress/base:20.13.0
       working_directory: '${{clone}}/apps/todo-ui'
       commands:
+        - oc config use-context "runner-cluster"
         - npx cypress install
-        - CYPRESS_BASE_URL="https://${BLUE_STACK_CANDIDATE}-app-dev.apps.acm-client.gj1x.p1.openshiftapps.com" npx cypress run
+        - CYPRESS_BASE_URL="$(oc get route -n app-dev $BLUE_STACK_CANDIDATE -o jsonpath='{.spec.host}')" npx cypress run
     switch-stack:
       title: Switch stack from blue to green
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
         - |-
-          oc config use-context "acm-client"
+          oc config use-context "runner-cluster"
           if ! oc get route todo-ui-bg -n app-dev &> /dev/null; then
             echo "Route does not exist"
             echo "Label bg-stack=blue to $BLUE_STACK_CANDIDATE"
@@ -113,7 +114,7 @@ spec:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set "image.tag=1.0.0" --set "image.path=todo-ui" -n app-stage
     integration-test-stage:
       title: Integration tests
@@ -145,7 +146,7 @@ spec:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       working_directory: '${{clone}}'
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - helm upgrade --install $BLUE_STACK_CANDIDATE helm-charts/deploy-app --set "image.tag=1.0.0" --set "image.path=todo-ui" -n app-prod
     validation-test-prod:
       title: Integration tests

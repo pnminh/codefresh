@@ -11,11 +11,11 @@ spec:
     set_build_secrets:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
       commands:
-        - oc config use-context "acm-client"
+        - oc config use-context "runner-cluster"
         - |
           # set build envs from secrets
           SECRET_NAME="codefresh-ioc"
-          NAMESPACE="codefresh"
+          NAMESPACE="codefresh-runner"
           oc get secret "$SECRET_NAME" -n "$NAMESPACE" -o json | jq -r '.data | to_entries[] | "BUILD_SECRET_\(.key)=\(.value|@base64d)"' >> ${{CF_VOLUME_PATH}}/env_vars_to_export
     add_registries_to_codefresh:
       image: quay.io/pnminh232/ubi8-extra:1.0.0
